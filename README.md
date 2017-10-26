@@ -34,7 +34,6 @@ kub02|10.0.0.22|k8s master / etcd node|
 kub03|10.0.0.26|k8s master / etcd node|
 kubminion01|10.0.0.23|k8s minion|
 kublb01|10.0.0.27|(nginx proxy/lb|
--|-|-
 
 Creating the VMs, and installing the OS is out of scope here. I assume you have the base OS up and running. If not, please check on google for tutorials on how to get your infrastructure up.
 
