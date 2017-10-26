@@ -28,7 +28,7 @@ While this writeup is written for Debian, you can easily adapt this to CentOS/RH
 * Debian 9.2
 ### Node info:
 Node Name|IP|Purpose
--------|--------------|---------------------------------
+-|-|-
 kub01|10.0.0.21|k8s master / etcd node
 kub02|10.0.0.22|k8s master / etcd node
 kub03|10.0.0.26|k8s master / etcd node
