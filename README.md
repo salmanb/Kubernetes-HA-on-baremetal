@@ -84,18 +84,11 @@ IP.2 = 10.0.0.22
 IP.3 = 10.0.0.26
 __EOF__
 ```
-
-## Generate k8s ca which will be used to sign all our k8s certs:
-```
-openssl genrsa -out ~/k8s/key/ca.key 4096
-openssl req -x509 -new -nodes -sha256 -key ~/k8s/key/ca.key -days 10000 -out ~/k8s/crt/ca.crt -subj "/CN=kubernetes-ca" -extensions v3_ca -config ~/k8s/openssl.cnf
-```
-
 ### Generate etcd ca which will be used to sign all our etcd certs:
 ```
 openssl genrsa -out ~/k8s/key/etcd-ca.key 4096
 openssl req -x509 -new -sha256 -nodes -key ~/k8s/key/etcd-ca.key -days 3650 -out ~/k8s/crt/etcd-ca.crt -subj "/CN=etcd-ca" -extensions v3_ca -config ~/k8s/openssl.cnf
-
+```
 ### Generate etcd local and peer certs:
 ```
 openssl genrsa -out ~/k8s/key/etcd.key 4096
