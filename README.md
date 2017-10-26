@@ -51,7 +51,8 @@ iptables -P FORWARD ACCEPT
 apt-get update && apt-get install -y curl apt-transport-https
 ```
 ### Install docker 17.03 -- higher versions might work, but they’re not supported by kubernetes at this time:
-```curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+```
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
 cat <<EOF >/etc/apt/sources.list.d/docker.list
 deb https://download.docker.com/linux/$(lsb_release -si | tr '[:upper:]' '[:lower:]') $(lsb_release -cs) stable
 EOF
@@ -60,7 +61,8 @@ apt-get update && apt-get install -y docker-ce=$(apt-cache madison docker-ce | g
 ### might have to fix /etc/apt/sources.list.d/docker.list if your dist is not detected correctly, or not found
 
 ## Install kubeadm, kubectl, kubelet
-```curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+```
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
 cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
 deb http://apt.kubernetes.io/ kubernetes-xenial main
 EOF
@@ -69,7 +71,8 @@ apt-get install -y kubelet kubeadm kubectl
 ```
 
 ## Generate required certs:
-```mkdir -p ~/k8s/crt ~/k8s/key ~/k8s/csr
+```
+mkdir -p ~/k8s/crt ~/k8s/key ~/k8s/csr
 cat <<__EOF__>~/k8s/openssl.cnf
 [ req ]
 distinguished_name = req_distinguished_name
