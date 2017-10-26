@@ -114,6 +114,9 @@ GITHUB_URL=https://github.com/coreos/etcd/releases/download
 DOWNLOAD_URL=${GOOGLE_URL}
 curl -L ${DOWNLOAD_URL}/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz -o etcd-${ETCD_VER}-linux-amd64.tar.gz
 tar xzvf etcd-${ETCD_VER}-linux-amd64.tar.gz -C .
+__EOF__
+chmod +x etcd_${ETCD_VER}-install.sh
+./etcd_${ETCD_VER}-install.sh
 ```
 ### Create etcd systemd service entry -- remember to update this with your correct host IPs, and node names
 ```
