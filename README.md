@@ -176,8 +176,7 @@ c4d8e71bc32e75e7: name=kub03 peerURLs=https://10.0.0.26:2380 clientURLs=https://
 d39138844daf67cb: name=kub01 peerURLs=https://10.0.0.21:2380 clientURLs=https://10.0.0.21:2379 isLeader=false
 ```
 ### Create the kubeadm init file:
-* **Update this so that advertiseAddress (the address where the kube-apiserver will listen) matches the IP for your master, and etcd endpoints. Also, update the apiServerCertSANs so that your correct FQDNs/shortnames/IPs are listed. kubeadm will use this config file to generate the certs that it needs, and also configure the etcd endpoints for your cluster.
-
+**Update this so that advertiseAddress (the address where the kube-apiserver will listen) matches the IP for your master, and etcd endpoints. Also, update the apiServerCertSANs so that your correct FQDNs/shortnames/IPs are listed. kubeadm will use this config file to generate the certs that it needs, and also configure the etcd endpoints for your cluster.
 You can also change the podSubnet subnet, but remember to make note of it as we’ll also have to tell flannel the correct podSubnet to use later. 10.244.0.0/16 is the subnet which the flannel manifest uses by default**: https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
 ```
 cat <<__EOF__>~/kubeadm-init.yaml
@@ -210,14 +209,15 @@ apiServerCertSANs:
 certificatesDir: /etc/kubernetes/pki/
 __EOF__
 scp ~/kubeadm-init.yaml root@kub01:
-
-Setup k8s on first master:
+```
+**Setup k8s on first master**:
+```
 ssh root@kub01
 useradd -d -m /home/kubeadmin -s /bin/bash -G docker,sudo kubeadmin
 kubeadm init --config ~/kubeadm-init.yaml
 ```
-**<< this will take a few minutes to complete >>**
-**Once done, you should see some instructions on copying the admin config to your user’s home directory, and a token which minions can use to join the cluster. You can make note of the token command to use later, or you can generate your own later on (as we’ll do later). Note: In 1.8+, tokens expire in 24 hours.**
+**<< this will take a few minutes to complete >>
+Once done, you should see some instructions on copying the admin config to your user’s home directory, and a token which minions can use to join the cluster. You can make note of the token command to use later, or you can generate your own later on (as we’ll do later). Note: In 1.8+, tokens expire in 24 hours.**
 ```
 su - kubeadmin
 rm -rf .kube
@@ -228,11 +228,11 @@ Install flannel:
 kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
 ```
 **If you changed the podSubnet above, download this file and update “Network”: “10.244.0.0/16” line to match what you chose. Then run kubect apply -f kube-flannel.yml to perform flannel install/setup.**
-*Verify that the master reports as Ready*:
+**Verify that the master reports as Ready**:
 ```
 kubectl get nodes
 ```
-*You should see something like this:*
+**You should see something like this:**
 ```
 NAME          STATUS    ROLES     AGE       VERSION
 kub01         Ready     master    1d        v1.8.1
