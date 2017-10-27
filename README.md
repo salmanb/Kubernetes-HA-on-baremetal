@@ -76,6 +76,9 @@ cat <<__EOF__>~/k8s/openssl.cnf
 [ req ]
 distinguished_name = req_distinguished_name
 [req_distinguished_name]
+[ v3_ca ]
+basicConstraints = critical, CA:TRUE
+keyUsage = critical, digitalSignature, keyEncipherment, keyCertSign
 [ alt_names_etcd ]
 DNS.1 = kub01
 DNS.2 = kub02
