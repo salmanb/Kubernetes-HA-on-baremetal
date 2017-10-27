@@ -4,14 +4,13 @@ This is a frankenstein How-To on setting up a HA cluster on bare metal / VMs.
 
 **Resources used:**
 * http://nixaid.com/kubernetes-from-scratch/
-
 * https://github.com/kelseyhightower/kubernetes-the-hard-way
-
 * https://github.com/cookeem/kubeadm-ha
+* https://kubernetes.io/docs/setup/independent/install-kubeadm/
 
 The writeups that I found, aren’t really aimed at beginners. My goal is to try and explain each step so that if something goes wrong, you can try and troubleshoot it with some knowledge.
 
-While this writeup is written for Debian, you can easily adapt this to CentOS/RHEL/OEL by adding the necessary yumrepos.
+While this writeup is written for Debian, you can easily adapt this to CentOS/RHEL/OEL by adding the necessary yumrepos. Please check the [kubeadm install guide](https://kubernetes.io/docs/setup/independent/install-kubeadm/ "kubeadm install guide") for more info.
 
 ### My current setup:
 * 3 VMs acting as Master nodes which will run the kube-apiserver, controller-manager, and scheduler. etcd will also run on these 3 nodes.
