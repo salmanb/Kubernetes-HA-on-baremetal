@@ -176,8 +176,9 @@ c4d8e71bc32e75e7: name=kub03 peerURLs=https://10.0.0.26:2380 clientURLs=https://
 d39138844daf67cb: name=kub01 peerURLs=https://10.0.0.21:2380 clientURLs=https://10.0.0.21:2379 isLeader=false
 ```
 ### Create the kubeadm init file:
-**Update this so that advertiseAddress (the address where the kube-apiserver will listen) matches the IP for your master, and etcd endpoints. Also, update the apiServerCertSANs so that your correct FQDNs/shortnames/IPs are listed. kubeadm will use this config file to generate the certs that it needs, and also configure the etcd endpoints for your cluster.
-You can also change the podSubnet subnet, but remember to make note of it as we’ll also have to tell flannel the correct podSubnet to use later. 10.244.0.0/16 is the subnet which the flannel manifest uses by default**: https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+Update this so that advertiseAddress (the address where the kube-apiserver will listen) matches the IP for your master, and etcd endpoints. Also, update the apiServerCertSANs so that your correct FQDNs/shortnames/IPs are listed. kubeadm will use this config file to generate the certs that it needs, and also configure the etcd endpoints for your cluster.
+
+You can also change the podSubnet subnet, but remember to make note of it as we’ll also have to tell flannel the correct podSubnet to use later. 10.244.0.0/16 is the subnet which the flannel manifest uses by default: https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
 ```
 cat <<__EOF__>~/kubeadm-init.yaml
 apiVersion: kubeadm.k8s.io/v1alpha1
@@ -216,32 +217,39 @@ ssh root@kub01
 useradd -d -m /home/kubeadmin -s /bin/bash -G docker,sudo kubeadmin
 kubeadm init --config ~/kubeadm-init.yaml
 ```
-**<< this will take a few minutes to complete >>
-Once done, you should see some instructions on copying the admin config to your user’s home directory, and a token which minions can use to join the cluster. You can make note of the token command to use later, or you can generate your own later on (as we’ll do later). Note: In 1.8+, tokens expire in 24 hours.**
+This will take a few minutes to complete.
+
+Once done, you should see some instructions on copying the admin config to your user’s home directory, and a token which minions can use to join the cluster. You can make note of the token command to use later, or you can generate your own (as we’ll do below). 
+
+**Note**: In 1.8+, tokens expire in 24 hours, unless you specify a different ttl.
+
 ```
 su - kubeadmin
 rm -rf .kube
 mkdir .kube
 sudo cp /etc/kubernetes/admin.conf .kube/config
 sudo chown kubeadmin:kubeadmin .kube/config
-Install flannel:
+```
+### Install flannel:
+```
 kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
 ```
-**If you changed the podSubnet above, download this file and update “Network”: “10.244.0.0/16” line to match what you chose. Then run kubect apply -f kube-flannel.yml to perform flannel install/setup.**
+If you changed the podSubnet above, download this file and update “Network”: “10.244.0.0/16” line to match what you chose. Then run kubect apply -f kube-flannel.yml to perform flannel install/setup.
+
 **Verify that the master reports as Ready**:
 ```
 kubectl get nodes
 ```
-**You should see something like this:**
+You should see something like this:
 ```
 NAME          STATUS    ROLES     AGE       VERSION
 kub01         Ready     master    1d        v1.8.1
 ```
 
-**If the master reports as NotReady, run kubectl describe node kub01 and look at the ‘Conditions’ section to see if any errors are reported. If you see anything about cni not configure, or network not configured, then check and verify that your flannel (or whatever else you chose to use) apply succeeded. For other erros, try google, or the k8s slack channel.**
+If the master reports as NotReady, run kubectl describe node kub01 and look at the ‘Conditions’ section to see if any errors are reported. If you see anything about cni not configure, or network not configured, then check and verify that your flannel (or whatever else you chose to use) apply succeeded. For other erros, try google, or the k8s slack channel.
 
 ### Join your minion(s):
-**If you made a note of the token and full join command which kubeadm generated, and it has not been over 24 hours, yet, you can just copy paste that full command as root on your minion to join the cluster. Otherwise, generate a new token on your master, and use that to have your minion join the cluster.**
+If you made a note of the token and full join command which kubeadm generated, and it has not been over 24 hours, yet, you can just copy paste that full command as root on your minion to join the cluster. Otherwise, generate a new token on your master, and use that to have your minion join the cluster.
 
 ### Generate sha256 ca hash:
 ```
@@ -282,7 +290,7 @@ kubminion01   Ready     <none>    1d        v1.8.1
 kubectl run nginx --image=nginx:alpine
 kubectl get pods -owide
 ```
-**You should see the pod and container getting created on one of the minions -- the -owide will show you the hostname for where the scheduler sent the deployment**
+You should see the pod and container getting created on one of the minions -- the -owide will show you the hostname for where the scheduler sent the deployment.
 
 ### Setup other masters:
 ```
@@ -296,8 +304,7 @@ MY_IP=$(hostname -I |awk ‘{print $1}’)
 echo ${MY_IP}
 ```
 
-**Verify that that is the correct IP for the machine before proceeding
-replace all instances of the original master’s name, and IP:**
+Verify that that is the correct IP for the machine before proceeding replace all instances of the original master’s name, and IP:
 ```
 sed -i.bak ‘s/kub01/kub02/g’ *
 sed -i.bak “s/10.0.0.21/${MY_IP}/g” manifests/*
@@ -309,8 +316,7 @@ cd /etc/kubernetes
 MY_IP=$(hostname -I |awk ‘{print $1}’)
 echo ${MY_IP}
 ```
-**Verify that that is the correct IP for the machine before proceeding
-replace all instances of the original master’s name, and IP:**
+Verify that that is the correct IP for the machine before proceeding replace all instances of the original master’s name, and IP:
 ```
 sed -i.bak ‘s/kub01/kub03/g’ *
 sed -i.bak “s/10.0.0.21/${MY_IP}/g” manifests/*
@@ -337,7 +343,7 @@ kubectl patch node kub02 -p ‘{"metadata":{"labels":{"node-role.kubernetes.io/m
 kubectl patch node kub03 -p ‘{"metadata":{"labels":{"node-role.kubernetes.io/master":""}},"spec":{"taints":[{"effect":"NoSchedule","key":"node-role.kubernetes.io/master","timeAdded":null}]}}’
 ```
 
-**Run kubectl get nodes again to verify that all master nodes show as master**
+Run kubectl get nodes again to verify that all master nodes show as master
 
 ### Setup your nginx prox/lb
 ```
