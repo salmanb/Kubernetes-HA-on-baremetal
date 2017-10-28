@@ -188,15 +188,17 @@ done
 ### Verify etcd cluster member list, and health:
 ```
 etcdctl --ca-file /etc/etcd/pki/etcd-ca.crt --cert-file /etc/etcd/pki/etcd.crt --key-file /etc/etcd/pki/etcd.key cluster-health
-
+```
+```
 member 33d87194523dae28 is healthy: got healthy result from https://10.0.0.22:2379
 member c4d8e71bc32e75e7 is healthy: got healthy result from https://10.0.0.26:2379
 member d39138844daf67cb is healthy: got healthy result from https://10.0.0.21:2379
 cluster is healthy
-
-etcdctl --ca-file /etc/etcd/pki/etcd-ca.crt --cert-file /etc/etcd/pki/etcd.crt --key-file 
-
-/etc/etcd/pki/etcd.key member list   
+```
+```
+etcdctl --ca-file /etc/etcd/pki/etcd-ca.crt --cert-file /etc/etcd/pki/etcd.crt --key-file /etc/etcd/pki/etcd.key member list
+```
+```
 33d87194523dae28: name=kub02 peerURLs=https://10.0.0.22:2380 clientURLs=https://10.0.0.22:2379 isLeader=true
 c4d8e71bc32e75e7: name=kub03 peerURLs=https://10.0.0.26:2380 clientURLs=https://10.0.0.26:2379 isLeader=false
 d39138844daf67cb: name=kub01 peerURLs=https://10.0.0.21:2380 clientURLs=https://10.0.0.21:2379 isLeader=false
@@ -276,8 +278,8 @@ If the master reports as NotReady, run kubectl describe node kub01 and look at t
 
 Before we go further, we need to make once change to the kube-apiserver manifest. In order to do, we need stop services first.
 ```
-systemctl stop kubelet docker
-systemctl status kubelet docker
+sudo systemctl stop kubelet docker
+sudo systemctl status kubelet docker
 ```
 
 Open /etc/kubernetes/manifest/kube-apiserver.yaml in an editor, and look for the following line:
@@ -291,8 +293,8 @@ Change this to:
 
 Restart services:
 ```
-systemctl start docker kubelet
-systemctl status docker kubelet
+sudo systemctl start docker kubelet
+sudo systemctl status docker kubelet
 ```
 
 ### Join your minion(s):
@@ -447,6 +449,7 @@ stream {
 }
 __EOF__
 systemctl restart nginx
+systemctl status nginx
 ```
 **make sure to update the IPs in the config to match your env.**
 
