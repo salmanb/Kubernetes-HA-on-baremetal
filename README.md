@@ -32,11 +32,11 @@ kub01|10.0.0.21|k8s master / etcd node|
 kub02|10.0.0.22|k8s master / etcd node|
 kub03|10.0.0.26|k8s master / etcd node|
 kubminion01|10.0.0.23|k8s minion|
-kublb01|10.0.0.27|(nginx proxy/lb|
+kublb01|10.0.0.27|nginx proxy/lb|
 
 Creating the VMs, and installing the OS is out of scope here. I assume you have the base OS up and running. If not, please check on google for tutorials on how to get your infrastructure up.
 
-You will also need to make sure that either your resolvers can resolve the hostnames for the nodes, or you have the master, minion, and lb hostnames added into your hosts file. As a last restore, just use the IPs for everything to reach the hosts.
+You will also need to make sure that either your resolvers can resolve the hostnames for the nodes, or you have the master, minion, and lb hostnames added into your hosts file. As a last resort, just use the IPs for everything to reach the hosts.
 
 ### Steps to run on all nodes:
 ```
