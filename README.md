@@ -276,7 +276,7 @@ kub01         Ready     master    1d        v1.8.1
 
 If the master reports as NotReady, run kubectl describe node kub01 and look at the ‘Conditions’ section to see if any errors are reported. If you see anything about cni not configure, or network not configured, then check and verify that your flannel (or whatever else you chose to use) apply succeeded. For other erros, try google, or the k8s slack channel.
 
-Before we go further, we need to make once change to the kube-apiserver manifest. In order to do, we need stop services first.
+Before we go further, we need to make one change to the kube-apiserver manifest. In order to do, we need stop services first.
 ```
 sudo systemctl stop kubelet docker
 sudo systemctl status kubelet docker
@@ -387,8 +387,10 @@ kub01         Ready     master    1d        v1.8.1
 kub02         Ready     <none>    1d        v1.8.1
 kub03         Ready     <none>    1d        v1.8.1
 kubminion01   Ready     <none>    
+```
 ### Mark the two new masters as a master node:
 ```
+
 kubectl patch node kub02 -p ‘{"metadata":{"labels":{"node-role.kubernetes.io/master":""}},"spec":{"taints":[{"effect":"NoSchedule","key":"node-role.kubernetes.io/master","timeAdded":null}]}}’
 
 kubectl patch node kub03 -p ‘{"metadata":{"labels":{"node-role.kubernetes.io/master":""}},"spec":{"taints":[{"effect":"NoSchedule","key":"node-role.kubernetes.io/master","timeAdded":null}]}}’
