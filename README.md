@@ -469,7 +469,6 @@ kubectl get pods --all-namespaces -owide
 ```
 **You should see out similar to this**:
 ```
-```
 NAME                            READY     STATUS    RESTARTS   AGE       IP           NODE
 kube-apiserver-kub01            1/1       Running   1          1d        10.0.0.21    kub01
 kube-apiserver-kub02            1/1       Running   1          1d        10.0.0.22    kub02
