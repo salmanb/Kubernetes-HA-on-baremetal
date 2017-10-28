@@ -79,6 +79,11 @@ distinguished_name = req_distinguished_name
 [ v3_ca ]
 basicConstraints = critical, CA:TRUE
 keyUsage = critical, digitalSignature, keyEncipherment, keyCertSign
+[ v3_req_etcd ]
+basicConstraints = CA:FALSE
+keyUsage = critical, digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth, clientAuth
+subjectAltName = @alt_names_etcd
 [ alt_names_etcd ]
 DNS.1 = kub01
 DNS.2 = kub02
@@ -97,23 +102,22 @@ openssl req -x509 -new -sha256 -nodes -key ~/k8s/key/etcd-ca.key -days 3650 -out
 ```
 openssl genrsa -out ~/k8s/key/etcd.key 4096
 openssl req -new -sha256 -key ~/k8s/key/etcd.key -subj "/CN=etcd" -out ~/k8s/csr/etcd.csr
-openssl x509 -req -in csr/etcd.csr -sha256 -CA crt/etcd-ca.crt -CAkey key/etcd-ca.key -CAcreateserial -out crt/etcd.crt -days 365 -extensions v3_req_etcd -extfile ./openssl.cnf
-openssl genrsa -out key/etcd-peer.key 4096
-openssl req -new -sha256 -key key/etcd-peer.key -subj "/CN=etcd-peer" -out ~/k8s/csr/etcd-peer.csr
-openssl x509 -req -in ~/k8s/csr/etcd-peer.csr -sha256 -CA ~/k8s/crt/etcd-ca.crt -CAkey ~/k8s/key/etcd-ca.key -CAcreateserial -out ~/k8s/crt/etcd-peer.crt -days 365 -extensions v3_req_etcd -extfile ./openssl.cnf
+openssl x509 -req -in ~/k8s/csr/etcd.csr -sha256 -CA ~/k8s/crt/etcd-ca.crt -CAkey ~/k8s/key/etcd-ca.key -CAcreateserial -out ~/k8s/crt/etcd.crt -days 365 -extensions v3_req_etcd -extfile ~/k8s/openssl.cnf
+openssl genrsa -out ~/k8s/key/etcd-peer.key 4096
+openssl req -new -sha256 -key ~/k8s/key/etcd-peer.key -subj "/CN=etcd-peer" -out ~/k8s/csr/etcd-peer.csr
+openssl x509 -req -in ~/k8s/csr/etcd-peer.csr -sha256 -CA ~/k8s/crt/etcd-ca.crt -CAkey ~/k8s/key/etcd-ca.key -CAcreateserial -out ~/k8s/crt/etcd-peer.crt -days 365 -extensions v3_req_etcd -extfile ~/k8s/openssl.cnf
 ```
 ### Setup etcd on all 3 master nodes -- run these as root, if you can. Otherwise, make adjustments to run as proper user:
 
 ### Download the etcd binaries:
 ```
 ETCD_VER=v3.2.9
-mkdir ~/etcd_${ETCD_VER}
-cd ~/etcd_${ETCD_VER}
-cat <<__EOF__>etcd_${ETCD_VER}-install.sh
-# choose either URL
 GOOGLE_URL=https://storage.googleapis.com/etcd
 GITHUB_URL=https://github.com/coreos/etcd/releases/download
 DOWNLOAD_URL=${GOOGLE_URL}
+mkdir ~/etcd_${ETCD_VER}
+cd ~/etcd_${ETCD_VER}
+cat <<__EOF__>etcd_${ETCD_VER}-install.sh
 curl -L ${DOWNLOAD_URL}/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz -o etcd-${ETCD_VER}-linux-amd64.tar.gz
 tar xzvf etcd-${ETCD_VER}-linux-amd64.tar.gz -C .
 __EOF__
@@ -122,28 +126,29 @@ chmod +x etcd_${ETCD_VER}-install.sh
 ```
 ### Create etcd systemd service entry -- remember to update this with your correct host IPs, and node names
 ```
+cd ~
 cat <<__EOF__>~/etcd.service
 [Unit]
 Description=etcd
 Documentation=https://github.com/coreos
 
 [Service]
-ExecStart=/usr/local/bin/etcd \
-  --name kub01 \
-  --cert-file=/etc/etcd/pki/etcd.crt \
-  --key-file=/etc/etcd/pki/etcd.key \
-  --peer-cert-file=/etc/etcd/pki/etcd-peer.crt \
-  --peer-key-file=/etc/etcd/pki/etcd-peer.key \
-  --trusted-ca-file=/etc/etcd/pki/etcd-ca.crt \
-  --peer-trusted-ca-file=/etc/etcd/pki/etcd-ca.crt \
---peer-client-cert-auth \
-  --client-cert-auth \
-  --initial-advertise-peer-urls https://10.0.0.21:2380 \
-  --listen-peer-urls https://10.0.0.21:2380 \
-  --listen-client-urls https://10.0.0.21:2379,http://127.0.0.1:2379 \
-  --advertise-client-urls https://10.0.0.21:2379 \
-  --initial-cluster-token etcd-cluster-0 \
-  --initial-cluster kub01=https://10.0.0.21:2380,kub02=https://10.0.0.22:2380,kub03=https://10.0.0.26:2380 \
+ExecStart=/usr/local/bin/etcd \\
+  --name kub01 \\
+  --cert-file=/etc/etcd/pki/etcd.crt \\
+  --key-file=/etc/etcd/pki/etcd.key \\
+  --peer-cert-file=/etc/etcd/pki/etcd-peer.crt \\
+  --peer-key-file=/etc/etcd/pki/etcd-peer.key \\
+  --trusted-ca-file=/etc/etcd/pki/etcd-ca.crt \\
+  --peer-trusted-ca-file=/etc/etcd/pki/etcd-ca.crt \\
+  --peer-client-cert-auth \\
+  --client-cert-auth \\
+  --initial-advertise-peer-urls https://10.0.0.21:2380 \\
+  --listen-peer-urls https://10.0.0.21:2380 \\
+  --listen-client-urls https://10.0.0.21:2379,http://127.0.0.1:2379 \\
+  --advertise-client-urls https://10.0.0.21:2379 \\
+  --initial-cluster-token etcd-cluster-0 \\
+  --initial-cluster kub01=https://10.0.0.21:2380,kub02=https://10.0.0.22:2380,kub03=https://10.0.0.26:2380 \\
   --data-dir=/var/lib/etcd
 Restart=on-failure
 RestartSec=5
@@ -151,12 +156,31 @@ RestartSec=5
 [Install]
 WantedBy=multi-user.target
 __EOF__
+
 ETCD_VER=v3.2.9
 for master in kub01 kub02 kub03; do \
+ssh ${master} "test -d /etc/etcd/pki && rm -rf /etc/etcd/pki" ; \
+ssh ${master} "test -d /var/lib/etcd && rm -rf /var/lib/etcd" ; \
 ssh ${master} “mkdir -p /etc/etcd/pki ; mkdir -p /var/lib/etcd” ;  \
 scp ~/k8s/crt/etcd* ~/k8s/key/etcd* ${master}:/etc/etcd/pki/;  \
 scp etcd.service ${master}:/etc/systemd/system/etcd.service ; \
-scp ~/etcd_${ETCD_VER}/etcd ~/etcd_${ETCD_VER}/etcdctl ${master}:/usr/local/bin
+scp ~/etcd_${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64/etcd ${master}:/usr/local/bin; \
+scp ~/etcd_${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64/etcdctl ${master}:/usr/local/bin;
+done
+```
+
+**Important**: Update /etc/systemctl/system/etcd.service on each node with the correct values for the following before starting etcd:
+```
+--name
+--initial-advertise-peer-urls
+--listen-peer-urls
+--listen-client-urls
+--advertise-client-urls
+```
+
+Start etcd:
+```
+for master in kub01 kub02 kub03; do \
 ssh  ${master} “systemctl daemon-reload” ; \
 ssh ${master} “systemctl start etcd” ; 
 done
@@ -193,7 +217,7 @@ etcd:
   - https://10.0.0.21:2379
   - https://10.0.0.22:2379
   - https://10.0.0.26:2379
- caFile: /etc/etcd/pki/etcd-ca.crt
+  caFile: /etc/etcd/pki/etcd-ca.crt
   certFile: /etc/etcd/pki/etcd.crt
   keyFile: /etc/etcd/pki/etcd.key
   dataDir: /var/lib/etcd
@@ -230,7 +254,7 @@ su - kubeadmin
 rm -rf .kube
 mkdir .kube
 sudo cp /etc/kubernetes/admin.conf .kube/config
-sudo chown kubeadmin:kubeadmin .kube/config
+sudo chown $(id -u):$(id -g) .kube/config
 ```
 ### Install flannel:
 ```
@@ -238,7 +262,7 @@ kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documen
 ```
 If you changed the podSubnet above, download this file and update “Network”: “10.244.0.0/16” line to match what you chose. Then run kubect apply -f kube-flannel.yml to perform flannel install/setup.
 
-**Verify that the master reports as Ready**:
+Verify that the master reports as Ready:
 ```
 kubectl get nodes
 ```
@@ -250,13 +274,33 @@ kub01         Ready     master    1d        v1.8.1
 
 If the master reports as NotReady, run kubectl describe node kub01 and look at the ‘Conditions’ section to see if any errors are reported. If you see anything about cni not configure, or network not configured, then check and verify that your flannel (or whatever else you chose to use) apply succeeded. For other erros, try google, or the k8s slack channel.
 
+Before we go further, we need to make once change to the kube-apiserver manifest. In order to do, we need stop services first.
+```
+systemctl stop kubelet docker
+systemctl status kubelet docker
+```
+
+Open /etc/kubernetes/manifest/kube-apiserver.yaml in an editor, and look for the following line:
+```
+--admission-control=Initializers,NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,ResourceQuota
+```
+Change this to:
+```
+--admission-control=Initializers,NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,DefaultTolerationSeconds,ResourceQuota
+```
+
+Restart services:
+```
+systemctl start docker kubelet
+systemctl status docker kubelet
+```
+
 ### Join your minion(s):
 If you made a note of the token and full join command which kubeadm generated, and it has not been over 24 hours, yet, you can just copy paste that full command as root on your minion to join the cluster. Otherwise, generate a new token on your master, and use that to have your minion join the cluster.
 
 ### Generate sha256 ca hash:
 ```
 sudo openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der | openssl dgst -sha256 -hex
-openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der | openssl dgst -sha256
 ```
 **Your generated hash will look similar to this -- the f11 part is your hash:**
 ```
@@ -275,7 +319,8 @@ sudo kubeadm token list
 ```
 ### Have your minion(s) join the cluster:
 ```
-sudo kubeadm join --token <token> kub01:6443 --discovery-token-ca-hash sha256:<hash>
+ssh root@kubminion01
+kubeadm join --token <token> kub01:6443 --discovery-token-ca-cert-hash sha256:<hash>
 ```
 
 ### Check on master to see if minion joined:
@@ -300,30 +345,32 @@ ssh root@kub01
 for master in kub02 kub03; do \
 rsync -av -e ssh --progress /etc/kubernetes ${master}:/etc/ ; \
 done
-ssh root@kub02
-cd /etc/kubernetes
-MY_IP=$(hostname -I |awk ‘{print $1}’)
-echo ${MY_IP}
-```
 
-Verify that that is the correct IP for the machine before proceeding replace all instances of the original master’s name, and IP:
-```
-sed -i.bak ‘s/kub01/kub02/g’ *
-sed -i.bak “s/10.0.0.21/${MY_IP}/g” manifests/*
-systemctl start docker
-systemctl start kubelet
+ssh root@kub02
+cd /etc/kubernetes && \
+MY_IP=$(hostname -I |awk ‘{print $1}’) && \
+MY_HOSTNAME=$(hostname -s) && \
+echo ${MY_IP} && \
+echo ${MY_HOSTNAME} && \
+sed -i.bak "s/kub01/${MY_HOSTNAME}/g" /etc/kubernetes/*.conf && \
+sed -i.bak "s/10.0.0.21/${MY_IP}/g" /etc/kubernetes/*.conf && \
+sed -i.bak “s/advertise-address=10.0.0.21/advertise-address=${MY_IP}/g” /etc/kubernetes/manifests/kube-apiserver.yaml && \
+systemctl daemon-reload && \
+systemctl restart docker && \
+systemctl restart kubelet 
 
 ssh root@kub03
-cd /etc/kubernetes
-MY_IP=$(hostname -I |awk ‘{print $1}’)
-echo ${MY_IP}
-```
-Verify that that is the correct IP for the machine before proceeding replace all instances of the original master’s name, and IP:
-```
-sed -i.bak ‘s/kub01/kub03/g’ *
-sed -i.bak “s/10.0.0.21/${MY_IP}/g” manifests/*
-systemctl start docker
-systemctl start kubelet
+cd /etc/kubernetes && \
+MY_IP=$(hostname -I |awk ‘{print $1}’) && \
+MY_HOSTNAME=$(hostname -s) && \
+echo ${MY_IP} && \
+echo ${MY_HOSTNAME} && \
+sed -i.bak "s/kub01/${MY_HOSTNAME}/g" /etc/kubernetes/*.conf && \
+sed -i.bak "s/10.0.0.21/${MY_IP}/g" /etc/kubernetes/*.conf && \
+sed -i.bak “s/advertise-address=10.0.0.21/advertise-address=${MY_IP}/g” /etc/kubernetes/manifests/kube-apiserver.yaml && \
+systemctl daemon-reload && \
+systemctl restart docker && \
+systemctl restart kubelet 
 ```
 
 ### Check if the two new masters joined the cluster 
@@ -399,6 +446,7 @@ stream {
     }
 }
 __EOF__
+systemctl restart nginx
 ```
 **make sure to update the IPs in the config to match your env.**
 
@@ -409,7 +457,7 @@ kubectl edit configmap kube-proxy -nkube-system
 **look for the line starting with “server:” and update the IP/hostname to match your lb. save the file once done.**
 
 ### Verify communication:
-**On each master**:
+On each master:
 
 ```
 kubectl get pods --all-namespaces -owide
