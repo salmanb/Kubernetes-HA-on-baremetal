@@ -37,6 +37,12 @@ kublb01|10.0.0.27|nginx proxy/lb|
 Creating the VMs, and installing the OS is out of scope here. I assume you have the base OS up and running. If not, please check on google for tutorials on how to get your infrastructure up.
 
 You will also need to make sure that either your resolvers can resolve the hostnames for the nodes, or you have the master, minion, and lb hostnames added into your hosts file. As a last resort, just use the IPs for everything to reach the hosts.
+
+
+### Steps to run on all nodes:
+```
+apt-get update && apt-get install -y curl apt-transport-https
+```
 ### Install docker 17.03 -- higher versions might work, but they’re not supported by kubernetes at this time:
 ```
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
@@ -46,8 +52,6 @@ EOF
 apt-get update && apt-get install -y docker-ce=$(apt-cache madison docker-ce | grep 17.03 | head -1 | awk '{print $3}')
 ```
 ### might have to fix /etc/apt/sources.list.d/docker.list if your dist is not detected correctly, or not found
-
-### Steps to run on all nodes:
 ```
 cat <<__EOF__ >  /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-ip6tables = 1
@@ -56,7 +60,6 @@ __EOF__
 sysctl --system
 sysctl -p /etc/sysctl.d/k8s.conf
 iptables -P FORWARD ACCEPT
-apt-get update && apt-get install -y curl apt-transport-https
 ```
 ## Install kubeadm, kubectl, kubelet
 ```
